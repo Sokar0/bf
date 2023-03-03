@@ -1,0 +1,111 @@
+{
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": 2022,
+    "sourceType": "module",
+    "project": "tsconfig.eslint.json",
+    "tsconfigRootDir": "./"
+  },
+  "plugins": [
+    "jest",
+    "@typescript-eslint"
+  ],
+  "extends": [
+    "airbnb-base",
+    "plugin:jest/all",
+    "plugin:import/errors",
+    "plugin:import/warnings",
+    "plugin:import/typescript",
+    "plugin:@typescript-eslint/recommended"
+  ],
+  "root": true,
+  "globals": {},
+  "rules": {
+    "linebreak-style": 0,
+    "eslint linebreak-style": [0, "error", "windows"],
+    "no-console": 2,
+    "import/no-extraneous-dependencies": [
+      "error",
+      {
+        "devDependencies": [
+          "**/*.test.ts",
+          "esbuild-plugins.js"
+        ]
+      }
+    ],
+    "import/no-unresolved": [
+      2,
+      {
+        "commonjs": true,
+        "amd": true
+      }
+    ],
+    "import/prefer-default-export": "off",
+    "jest/prefer-spy-on": "off",
+    "max-len": [
+      "error",
+      {
+        "code": 150,
+        "ignoreComments": true,
+        "ignoreTrailingComments": true,
+        "ignoreUrls": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true
+      }
+    ],
+    "comma-dangle": [
+      "error",
+      {
+        "arrays": "always-multiline",
+        "objects": "always-multiline",
+        "imports": "always-multiline",
+        "exports": "always-multiline",
+        "functions": "ignore"
+      }
+    ],
+    "lines-between-class-members": "off",
+    "jest/no-hooks": [
+      "error",
+      {
+        "allow": [
+          "beforeEach",
+          "afterEach",
+          "beforeAll",
+          "afterAll"
+        ]
+      }
+    ]
+  },
+  "env": {
+    "es2020": true,
+    "node": true,
+    "jest": true
+  },
+  "overrides": [],
+  "settings": {
+    "import/resolver": {
+      "alias": {
+        "map": [
+          [
+            "@src",
+            "./src"
+          ],
+          [
+            "@tests",
+            "./tests"
+          ]
+        ],
+        "extensions": [
+          ".ts",
+          ".js"
+        ]
+      },
+      "node": {
+        "extensions": [
+          ".js",
+          ".ts"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+    "extends": "./tsconfig.json",
+    "exclude": [
+        "node_modules/**/*",
+        "dist/**/*"
+    ],
+    "include": [
+        "src/**/*",
+        "tests/**/*",
+        ".eslintrc.json"
+    ],
+    "ignorePatterns": [
+        "*.d.ts"
+    ]
+}

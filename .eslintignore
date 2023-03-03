@@ -1,0 +1,13 @@
+.eslintrc.json
+babel.config.js
+commitlint.config.*
+coverage/**/*
+esbuild-plugins.js
+jest.config.js
+jest.extended.setup.js
+global.d.ts
+dist/**/*
+scripts/**/*
+node_modules/**/*
+.scannerwork/**/*
+test-report.xml

@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment 
+metadata:
+  name: cps-backend-test-1
+  labels:
+    app: cps-backend-test-1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: cps-backend-test-1
+  template:  
+    metadata:
+      labels: 
+        app: cps-backend-test-1
+    spec:
+      initContainers:
+        - name: init-db
+          image: busybox:1.31
+          command: ['sh', '-c', 'echo -e "Checking for the availability of postgres Server deployment"; while ! nc -z postgrestest 5432; do sleep 1; printf "-"; done; echo -e "  >> postgres DB Server has started";']      
+      containers:
+        - name: cps-backend-test-1
+          image: CONTAINER_IMAGE
+          ports: 
+            - containerPort: 3123
+          env:
+            - name: DB_HOSTNAME
+              value: "postgrestest"            
+            - name: DB_PORT
+              value: "5432"            
+            - name: DB_NAME
+              value: "cps"            
+            - name: DB_USERNAME
+              value: "postgres"           
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-db-password
+                  key: db-password           
+                   

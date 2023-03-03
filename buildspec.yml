@@ -1,0 +1,66 @@
+version: 0.2
+env:
+  secrets-manager:
+    SSH_KEY: github_key:github
+    NODE_ENV: env:NODE_ENV
+    HTTP_PORT: env:HTTP_PORT
+    HTTPS_PORT: env:HTTPS_PORT
+    ALLOWED_ORIGINS: env:ALLOWED_ORIGINS
+phases:
+  install:
+    commands:
+      - echo "Install Phase - Nothing to do using latest Amazon Linux Docker Image for CodeBuild which has all AWS Tools - https://github.com/aws/aws-codebuild-docker-images/blob/master/al2/x86_64/standard/3.0/Dockerfile"
+  pre_build:
+      commands:
+        - TAG="$(date +%Y-%m-%d.%H.%M.%S).$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"      
+        - echo "Update Image tag in kube-manifest..."
+        - sed -i 's@CONTAINER_IMAGE@'"$REPOSITORY_URI:$TAG"'@' kube-manifests/02-Backend-of-frontend-Deployment-Service.yml        
+        - echo "Verify AWS CLI Version..."
+        - aws --version
+        - echo "Login in to Amazon ECR..."
+        - $(aws ecr get-login --no-include-email)
+        - export KUBECONFIG=$HOME/.kube/config
+        - echo "-----BEGIN OPENSSH PRIVATE KEY-----" > ./id_rsa
+        - cat ./id_rsa
+        - echo $SSH_KEY
+        - echo $SSH_KEY >> ./id_rsa
+        - cat ./id_rsa
+        - echo "-----END OPENSSH PRIVATE KEY-----" >> ./id_rsa
+        - cat ./id_rsa
+        - pwd
+        - TEST=`pwd`
+  build:
+    commands:
+      - echo "Build started on `date`"
+      - echo "Building the Docker image..."
+      - export DOCKER_BUILDKIT=1
+      - DOCKER_BUILDKIT=1 docker build --ssh github="$TEST/id_rsa" --build-arg NODE_ENV=$NODE_ENV --build-arg HTTP_PORT=$HTTP_PORT --build-arg HTTPS_PORT=$HTTPS_PORT --build-arg ALLOWED_ORIGINS=$ALLOWED_ORIGINS --tag $REPOSITORY_URI:$TAG .
+  post_build:
+    commands:
+      - echo "Build completed on `date`"
+      - echo "Pushing the Docker image to ECR Repository"
+      - docker push $REPOSITORY_URI:$TAG
+      - echo "Docker Image Push to ECR Completed -  $REPOSITORY_URI:$TAG"    
+      - echo "Setting Environment Variables related to AWS CLI for Kube Config Setup"          
+      - CREDENTIALS=$(aws sts assume-role --role-arn $EKS_KUBECTL_ROLE_ARN --role-session-name codebuild-kubectl --duration-seconds 900)
+      - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
+      - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
+      - export AWS_SESSION_TOKEN="$(echo ${CREDENTIALS} | jq -r '.Credentials.SessionToken')"
+      - export AWS_EXPIRATION=$(echo ${CREDENTIALS} | jq -r '.Credentials.Expiration')             
+      - echo "Update Kube Config"      
+      - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
+      - echo "Apply changes to kube manifests"            
+      - kubectl apply -f kube-manifests --namespace=test
+      - echo "Completed applying changes to Kubernetes Objects"           
+      - printf '[{"name":"02-Backend-of-frontend-Deployment-Service","imageUri":"%s"}]' $REPOSITORY_URI:$TAG > build1.json
+      # Additional Commands to view your credentials      
+      #- echo "Credentials Value is..  ${CREDENTIALS}"      
+      #- echo "AWS_ACCESS_KEY_ID...  ${AWS_ACCESS_KEY_ID}"            
+      #- echo "AWS_SECRET_ACCESS_KEY...  ${AWS_SECRET_ACCESS_KEY}"            
+      #- echo "AWS_SESSION_TOKEN...  ${AWS_SESSION_TOKEN}"            
+      #- echo "AWS_EXPIRATION...  $AWS_EXPIRATION"             
+      #- echo "EKS_CLUSTER_NAME...  $EKS_CLUSTER_NAME"             
+artifacts:
+  files: 
+    - build1.json   
+    - kube-manifests/*

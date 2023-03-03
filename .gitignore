@@ -1,0 +1,7 @@
+dist/
+node_modules/
+.vscode/*.log
+.env
+coverage
+.scannerwork
+test-report.xml
